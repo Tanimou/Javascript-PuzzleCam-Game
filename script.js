@@ -104,7 +104,7 @@ function updateCanvas(){
 
 
 
-//!Cropping the piece into pieces 
+//!Cropping the video into pieces 
 
 //*Creation of Piece object
 class Piece{
