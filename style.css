@@ -2,4 +2,45 @@ body{
     margin:0;
     overflow:hidden;
     overscroll-behavior: none;
+    font-family:Arial;
+}
+
+#menuItems{
+    position: absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    background:rgba(255,255,255,0.6);
+    text-align:center;
+    padding:5vmin;
+    border:1vmin rgba(0,0,0,0.6) solid;
+    font-size:3vmin;
+}
+
+button{
+    font-size:5vmin;
+    background:rgb(123,146,196);
+    color:white;
+    cursor:pointer;
+    transition:0.5s;
+    border:none;
+    border-radius:1vmin
+}
+
+button:hover{
+    background:green;
+
+}
+select{
+    font-size:2vmin;
+    cursor:pointer;
+    border:none;
+    border-radius:1vmin;
+    outline:none;
+}
+#time{
+    position:absolute;
+    top:0;
+    left:50%;
+    transform:translate(-50%);
 }

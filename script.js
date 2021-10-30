@@ -4,6 +4,9 @@ let CANVAS = null; //*used to create the Canvas object
 let CONTEXT = null; //*add a reference to the canvas context
 let PIECES = []; //*to have an array of pieces
 let SELECTED_PIECE=null //*to define the selected piece by the user
+let START_TIME=null; //* the time when the user start the game
+let END_TIME=null; // *the time when the game is over
+
 //!we'll use the scaler to specify how much of space will be used by the image
 let SCALER = 0.8; //* set the size margin to 80%
 let SIZE = { x: 0, y: 0, width: 0, height: 0, rows: 3, columns: 3 }; //*to keep track of other related information in this size variable
@@ -52,74 +55,64 @@ function main() {
 
 
 
-//!                       DRAG AND DROP PART
-
-
-function addEventListeners() {
-    //*addEventListeners for mouse
-    CANVAS.addEventListener("mousedown", onMouseDown)
-    CANVAS.addEventListener("mousemove", onMouseMove)
-    CANVAS.addEventListener("mouseup", onMouseUp)
-    //*addEventListeners for mobile
-    CANVAS.addEventListener("touchstart", onTouchStart)
-    CANVAS.addEventListener("touchmove", onTouchMove)
-    CANVAS.addEventListener("touchend", onTouchEnd)
-}
-
-function onTouchStart(evt){
-    let loc={x:evt.touches[0].clientX, y:evt.touches[0].clientY}
-    onMouseDown(loc)
-}
-
-function onTouchMove(evt) {
-    let loc = { x: evt.touches[0].clientX, y: evt.touches[0].clientY }
-    onMouseMove(loc)
-}
-function onTouchEnd() {
-    onMouseUp()
-}
-
-function onMouseDown(evt) {
-    SELECTED_PIECE = getPressedPiece(evt)
-    if (SELECTED_PIECE != null) {
-        const index=PIECES.indexOf(SELECTED_PIECE);
-        if(index>-1) {
-            PIECES.splice(index,1)
-            PIECES.push(SELECTED_PIECE)
+//!           INITIALIZATION OF PIECES PART
+function initializePieces(rows, cols) {
+    SIZE.columns = cols;
+    SIZE.rows = rows;
+    PIECES = [];
+    //*adding new pieces into the array
+    for (let i = 0; i < SIZE.rows; i++) {
+        for (let j = 0; j < SIZE.columns; j++) {
+            PIECES.push(new Piece(i, j));
         }
-        SELECTED_PIECE.offset = {
-            x: evt.x - SELECTED_PIECE.x,
-            y: evt.y - SELECTED_PIECE.y
-        }
-    
-}
-}
-function onMouseMove(evt) {
-    if (SELECTED_PIECE != null) {
-        SELECTED_PIECE.x = evt.x - SELECTED_PIECE.offset.x
-        SELECTED_PIECE.y = evt.y - SELECTED_PIECE.offset.y
     }
 }
+//!
 
-function onMouseUp() {
-if (SELECTED_PIECE.isClose()) {
-    SELECTED_PIECE.snap()
-}    
-SELECTED_PIECE=null
-}
-
-function getPressedPiece(loc) {
-    for (let i = PIECES.length - 1; i >= 0; i--) {
-        if ((loc.x > PIECES[i].x && loc.x < (PIECES[i].x + PIECES[i].width)) && (loc.y > PIECES[i].y && loc.y < (PIECES[i].y + PIECES[i].height))) {
-            return PIECES[i]
-        }
-
+//!          RANDOMIZE THE LOCATION OF PIECES PART
+function randomizePieces() {
+    //we iterate trhough all of pieces and generate a random location for each piece
+    for (let i = 0; i < PIECES.length; i++) {
+        let loc = {
+            //*because the random values are between 0 and 1, the pieces will be in the top left corner
+            //*to prevent it we scale them with the canvas width and height
+            //*but some pieces go outside of the screen, so we subtract them with pieces width and height when scaling
+            x: Math.random() * (CANVAS.width - PIECES[i].width),
+            y: Math.random() * (CANVAS.height - PIECES[i].height),
+        };
+        PIECES[i].x = loc.x;
+        PIECES[i].y = loc.y;
+        PIECES[i].correct = false // the pieces are not in the correct location because we randomize them
     }
-    return null
 }
 //!
 
 
+//!                      UPDATE CANVAS PART
+function updateCanvas() {
+    //*we need to clear the canvas before drawing
+    CONTEXT.clearRect(0, 0, CANVAS.width, CANVAS.height);
+    //*we set a 50% of transparency
+    CONTEXT.globalAlpha = 0.5
+    //*the updateCanvas() function needs to draw the video onto the canvas,
+    //*that's why we'll use the drawImage() method of the canvas context to do that
+    //!we must update the draw image method to display the new size of the video
+    CONTEXT.drawImage(VIDEO, SIZE.x, SIZE.y, SIZE.width, SIZE.height)
+    //*and we reset the transparency so that only the video is semi transparent but the pieces are drawn normarly after that
+    CONTEXT.globalAlpha = 1
+
+    //*but this method doesn't pick up any movement yet
+    //*we need to update the canvas many times per second to see this happen
+    //*then we use the requestAnimationFrame() method to make it work
+
+    //*drawing pieces
+    for (let i = 0; i < PIECES.length; i++) {
+        PIECES[i].draw(CONTEXT); //see class Piece
+    }
+    updateTime()
+    window.requestAnimationFrame(updateCanvas);
+}
+//!
 //*function that resize the canvas and the video
 function handleResize() {
     //*our canvas will fill the entire window, we'll need to resize to the middle of the window
@@ -143,34 +136,6 @@ function handleResize() {
 
 
 
-//!                      UPDATE CANVAS PART
-function updateCanvas() {
-        //*we need to clear the canvas before drawing
-    CONTEXT.clearRect(0, 0, CANVAS.width, CANVAS.height);
-    //*we set a 50% of transparency
-    CONTEXT.globalAlpha = 0.5
-    //*the updateCanvas() function needs to draw the video onto the canvas,
-    //*that's why we'll use the drawImage() method of the canvas context to do that
-    //!we must update the draw image method to display the new size of the video
-      CONTEXT.drawImage(VIDEO,SIZE.x,SIZE.y,SIZE.width,SIZE.height)
-    //*and we reset the transparency so that only the video is semi transparent but the pieces are drawn normarly after that
-        CONTEXT.globalAlpha = 1
-
-    //*but this method doesn't pick up any movement yet
-    //*we need to update the canvas many times per second to see this happen
-    //*then we use the requestAnimationFrame() method to make it work
-
-    //*drawing pieces
-    for (let i = 0; i < PIECES.length; i++) {
-        PIECES[i].draw(CONTEXT); //see class Piece
-    }
-
-    window.requestAnimationFrame(updateCanvas);
-}
-//!
-
-
-
 
 //!                   CROPPING THE VIDEO INTO PIECES PART
 
@@ -185,8 +150,10 @@ class Piece {
         //*the x and y are set so that each piece is defined to be at the correct location at first
         this.x = SIZE.x + this.width * this.colIndex;
         this.y = SIZE.y + this.height * this.rowIndex;
-        this.xCorrect=this.x
-        this.yCorrect=this.y
+        //*the correct location should be stored here because when initializing the pieces will be at the correct location
+        this.xCorrect = this.x
+        this.yCorrect = this.y
+        this.correct = true //*it will say if the location of the piece is correct or not. At the start all pieces are in the correct location
     }
     //*To be able to draw the pieces
     draw(context) {
@@ -209,58 +176,202 @@ class Piece {
         context.rect(this.x, this.y, this.width, this.height); //*we set the location (x,y) and the size of the pieces, which are calculated in the constructor
         context.stroke();
     }
-    isClose(){
-        if(distance({x:this.x,y:this.y},{x:this.xCorrect,y:this.yCorrect})<this.width/3)
-        {
+
+    isClose() {
+        if (distance({ x: this.x, y: this.y }, { x: this.xCorrect, y: this.yCorrect }) < this.width / 3) {
             return true
         }
         return false
     }
-
-    snap(){
-        this.x=this.xCorrect
-        this.y=this.yCorrect
+    //*the snap() method just put the pieces in the correct location
+    snap() {
+        this.x = this.xCorrect
+        this.y = this.yCorrect
+        this.correct = true //we set to true when snapping
     }
 }
 
-function distance(p1,p2){
-    return Math.sqrt((p1.x - p2.x) * (p1.x -p2.x) + (p1.y - p2.y)*(p1.y -p2.y))
+function distance(p1, p2) {
+    return Math.sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y))
 }
 //!
 
 
-//!           INITIALIZATION OF PIECES PART
-function initializePieces(rows, cols) {
-    SIZE.columns = cols;
-    SIZE.rows = rows;
-    PIECES = [];
-    //*adding new pieces into the array
-    for (let i = 0; i < SIZE.rows; i++) {
-        for (let j = 0; j < SIZE.columns; j++) {
-            PIECES.push(new Piece(i, j));
+
+
+
+//!                       DRAG AND DROP PART
+
+function addEventListeners() {
+    //*addEventListeners for mouse
+    CANVAS.addEventListener("mousedown", onMouseDown)
+    CANVAS.addEventListener("mousemove", onMouseMove)
+    CANVAS.addEventListener("mouseup", onMouseUp)
+    //*addEventListeners for mobile
+    CANVAS.addEventListener("touchstart", onTouchStart)
+    CANVAS.addEventListener("touchmove", onTouchMove)
+    CANVAS.addEventListener("touchend", onTouchEnd)
+}
+
+function onTouchStart(evt) {
+    let loc = { x: evt.touches[0].clientX, y: evt.touches[0].clientY }
+    onMouseDown(loc)
+}
+
+function onTouchMove(evt) {
+    let loc = { x: evt.touches[0].clientX, y: evt.touches[0].clientY }
+    onMouseMove(loc)
+}
+
+function onTouchEnd() {
+    onMouseUp()
+}
+
+function onMouseDown(evt) {
+    SELECTED_PIECE = getPressedPiece(evt)
+    if (SELECTED_PIECE != null) {
+        //*because sometimes the selected piece is drawn underneath the others
+        //*depending on the order we are drawing the pieces
+        //*since the top left one is the first in the array, all others will be drawn on top of it
+        //*so we need to fix it by moving the selected piece at the last index in the array
+
+        //*we first find out the index it's currently at
+        const index = PIECES.indexOf(SELECTED_PIECE);
+        //*then we remove it using the splice() and adding it again at the end of the array using the push() method
+        if (index > -1) {
+            PIECES.splice(index, 1)
+            PIECES.push(SELECTED_PIECE)
         }
+        //*if a piece is selected, we calculate what is the offset to the top left corner of piece
+        SELECTED_PIECE.offset = {
+            x: evt.x - SELECTED_PIECE.x,
+            y: evt.y - SELECTED_PIECE.y
+        }
+        //*it possible that the user grabs the piece from the correct location
+        //*so we need to set it back to false 
+        SELECTED_PIECE.correct = false
     }
+}
+
+function onMouseMove(evt) {
+    if (SELECTED_PIECE != null) {
+        //*if the piece is selected, we update the location to the new mouse location and consider the offset as well
+        SELECTED_PIECE.x = evt.x - SELECTED_PIECE.offset.x
+        SELECTED_PIECE.y = evt.y - SELECTED_PIECE.offset.y
+    }
+}
+
+
+function onMouseUp() {
+
+    //*so before we release the piece, we need to check if the piece is close to the correct location
+    //*if so, we snap it in place, snap means lâcher
+    //*it is very unlikely that the player will place the pieces in the pixel perfect way, that's why we use snap() to help
+    if (SELECTED_PIECE.isClose()) {
+        SELECTED_PIECE.snap()
+        //*we check if all pieces are in the correct place and also the time because we don't want to update the time when the user completed the game
+        if (isComplete() && END_TIME == null) {
+            let now = new Date().getTime()
+            END_TIME = now //*so we set the END_TIME when the game is over(when isComplete() is true)
+        }
+
+    }
+
+    //*if the piece is not close to the correct location
+    //*we just let it to the current location by setting SELECTED_PIECE to null
+    SELECTED_PIECE = null
+
+}
+//*to find out if a piece have been pressed, we just iterate through all pieces
+//*and check to see if the click location is within the bounds of any of them
+//*then we return the piece
+function getPressedPiece(loc) {
+    //*because when the player click where multiple pieces overlap, it selects the bottom most pieces
+    //*we fix it by iterating in reverse order
+    //*in this way we stop at the top most piece that the user is clicking on
+    for (let i = PIECES.length - 1; i >= 0; i--) {
+        if ((loc.x > PIECES[i].x && loc.x < (PIECES[i].x + PIECES[i].width)) && (loc.y > PIECES[i].y && loc.y < (PIECES[i].y + PIECES[i].height))) {
+            return PIECES[i]
+        }
+
+    }
+    return null
 }
 //!
 
 
 
 
-//!          RANDOMIZE THE LOCATION OF PIECES PART
-function randomizePieces() {
-    //we iterate trhough all of pieces and generate a random location for each piece
+//!                  GAME COMPONENTS PART
+//*set difficulty function for game
+function setDifficulty(){
+    let diff=document.getElementById("difficulty").value
+    switch(diff){
+        case "easy":
+            initializePieces(3,3)
+            break
+        case "medium":
+            initializePieces(5,5)
+            break
+        case "hard":
+            initializePieces(10, 10)
+            break
+        case "insane":
+            initializePieces(15, 15)
+            break
+    }
+}
+//*restart function for game
+function restart(){
+    START_TIME=new Date().getTime()//get the time when starting playing
+    END_TIME=null
+    randomizePieces()
+    document.getElementById("menuItems").style.display="none"
+}
+//*updateTime function for game
+function updateTime(){
+    now = new Date().getTime()
+    if(START_TIME!=null){
+        if(END_TIME!=null){ //*if the game finished we stop updating the time
+              document.getElementById("time").innerHTML=formatTime(END_TIME-START_TIME)
+
+        }else{
+            document.getElementById("time").innerHTML = formatTime(now - START_TIME)
+
+        }
+      
+    }
+}
+//*checking if all pieces are in the correct location
+function isComplete() {
     for (let i = 0; i < PIECES.length; i++) {
-        let loc = {
-            //*because the random values are between 0 and 1, the pieces will be in the top left corner
-            //*to prevent it we scale them with the canvas width and height
-            //*but some pieces go outside of the screen, so we subtract them with pieces width and height when scaling
-            x: Math.random() * (CANVAS.width - PIECES[i].width),
-            y: Math.random() * (CANVAS.height - PIECES[i].height),
-        };
-        PIECES[i].x = loc.x;
-        PIECES[i].y = loc.y;
+        if (PIECES[i].correct == false)
+            return false
     }
+    return true
+}
+
+//*formatTime function for game to format in 00:00:00 format
+function formatTime(milliseconds){
+       let seconds=Math.floor(milliseconds/1000)//only keep the integer part of the result when dividing by 1000
+       let s=Math.floor(seconds%60)
+       let m=Math.floor((seconds%(60*60))/60)
+       let h=Math.floor((seconds%(60*60*24))/(60*60))
+
+       let formattedTime=h.toString().padStart(2,'0')
+       formattedTime+= ":"
+       formattedTime+=m.toString().padStart(2,'0')
+       formattedTime += ":"
+       formattedTime+=s.toString().padStart(2,'0')
+
+       return formattedTime
 }
 //!
+
+
+
+
+
+
 
 
