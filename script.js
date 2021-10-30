@@ -77,6 +77,9 @@ function initializePieces(rows, cols) {
             PIECES.push(new Piece(i, j));
         }
     }
+
+
+
     //!Advanced cropping part
     let cnt = 0 //count each piece
     for (let i = 0; i < SIZE.rows; i++) {
@@ -219,6 +222,7 @@ class Piece {
 
         //*drawig the piece in rectangle way
         //  context.rect(this.x, this.y, this.width, this.height); //*we set the location (x,y) and the size of the pieces, which are calculated in the constructor
+       //!             Advanced cropping
         //*sizing the tab of the piece
         const sz = Math.min(this.width, this.height)
         const neck = 0.05 * sz
@@ -230,116 +234,116 @@ class Piece {
         context.moveTo(this.x, this.y)
 
         //!to top right
-        if(this.top)  //*we need to check if we need to draw the tab
-      
+        if (this.top)  //*we need to check if we need to draw the tab, if there is a inner or outer tab
+
         {
-        context.lineTo(this.x + this.width* Math.abs(this.top)-neck, this.y)
-       
-        context.bezierCurveTo(
-            this.x+this.width*Math.abs(this.top)-neck,
-            this.y-tabHeight* Math.sign(this.top)*0.2,
+            context.lineTo(this.x + this.width * Math.abs(this.top) - neck, this.y)
 
-            this.x+ this.width * Math.abs(this.top)-tabWidth,
-            this.y-tabHeight* Math.sign(this.top), 
+            context.bezierCurveTo(
+                this.x + this.width * Math.abs(this.top) - neck,
+                this.y - tabHeight * Math.sign(this.top) * 0.2,
 
-            this.x+ this.width * Math.abs(this.top),
-            this.y-tabHeight* Math.sign(this.top)
-        )
+                this.x + this.width * Math.abs(this.top) - tabWidth,
+                this.y - tabHeight * Math.sign(this.top),
 
-        context.bezierCurveTo(
-            this.x + this.width * Math.abs(this.top) + tabWidth,
-            this.y - tabHeight * Math.sign(this.top), 
+                this.x + this.width * Math.abs(this.top),
+                this.y - tabHeight * Math.sign(this.top)
+            )
 
-            this.x + this.width * Math.abs(this.top) + neck,
-            this.y - tabHeight * Math.sign(this.top) * 0.2,
+            context.bezierCurveTo(
+                this.x + this.width * Math.abs(this.top) + tabWidth,
+                this.y - tabHeight * Math.sign(this.top),
 
-            this.x + this.width * Math.abs(this.top) + neck, this.y
-        )
-        
+                this.x + this.width * Math.abs(this.top) + neck,
+                this.y - tabHeight * Math.sign(this.top) * 0.2,
+
+                this.x + this.width * Math.abs(this.top) + neck, this.y
+            )
+
         }
 
         context.lineTo(this.x + this.width, this.y)
 
 
         //!to bottom right
-        if(this.right)
-       { context.lineTo(this.x + this.width,this.y+this.height * Math.abs(this.right) - neck)
-       
-        context.bezierCurveTo(
-            this.x+this.width-tabHeight*Math.sign(this.right)*0.2,
-            this.y+this.height*Math.abs(this.right)-neck, 
+        if (this.right) {
+            context.lineTo(this.x + this.width, this.y + this.height * Math.abs(this.right) - neck)
 
-            this.x + this.width - tabHeight * Math.sign(this.right),
-            this.y + this.height * Math.abs(this.right) - tabWidth, 
+            context.bezierCurveTo(
+                this.x + this.width - tabHeight * Math.sign(this.right) * 0.2,
+                this.y + this.height * Math.abs(this.right) - neck,
 
-            this.x + this.width - tabHeight * Math.sign(this.right),
-            this.y + this.height * Math.abs(this.right)
+                this.x + this.width - tabHeight * Math.sign(this.right),
+                this.y + this.height * Math.abs(this.right) - tabWidth,
 
-        )
+                this.x + this.width - tabHeight * Math.sign(this.right),
+                this.y + this.height * Math.abs(this.right)
 
-        context.bezierCurveTo(
-            this.x + this.width - tabHeight * Math.sign(this.right),
-            this.y + this.height * Math.abs(this.right) + tabWidth,
-            
-            this.x + this.width - tabHeight * Math.sign(this.right) * 0.2,
-            this.y + this.height * Math.abs(this.right) + neck,
-            
-            this.x+this.width,
-            this.y + this.height * Math.abs(this.right) + neck
+            )
 
-        )
-     }
+            context.bezierCurveTo(
+                this.x + this.width - tabHeight * Math.sign(this.right),
+                this.y + this.height * Math.abs(this.right) + tabWidth,
+
+                this.x + this.width - tabHeight * Math.sign(this.right) * 0.2,
+                this.y + this.height * Math.abs(this.right) + neck,
+
+                this.x + this.width,
+                this.y + this.height * Math.abs(this.right) + neck
+
+            )
+        }
         context.lineTo(this.x + this.width, this.y + this.height)
 
         //!to bottom left
-        if(this.bottom)
-      {  context.lineTo(this.x + this.width * Math.abs(this.bottom) + neck, this.y+this.height)
+        if (this.bottom) {
+            context.lineTo(this.x + this.width * Math.abs(this.bottom) + neck, this.y + this.height)
             context.bezierCurveTo(
                 this.x + this.width * Math.abs(this.bottom) + neck,
-                this.y + this.height+tabHeight * Math.sign(this.bottom) * 0.2,
+                this.y + this.height + tabHeight * Math.sign(this.bottom) * 0.2,
 
                 this.x + this.width * Math.abs(this.bottom) + tabWidth,
-                this.y + this.height+tabHeight * Math.sign(this.bottom),
+                this.y + this.height + tabHeight * Math.sign(this.bottom),
 
                 this.x + this.width * Math.abs(this.bottom),
-                this.y + this.height+tabHeight * Math.sign(this.bottom),
+                this.y + this.height + tabHeight * Math.sign(this.bottom),
 
             )
 
             context.bezierCurveTo(
                 this.x + this.width * Math.abs(this.bottom) - tabWidth,
-                this.y + this.height+tabHeight * Math.sign(this.bottom),
+                this.y + this.height + tabHeight * Math.sign(this.bottom),
 
                 this.x + this.width * Math.abs(this.bottom) - neck,
-                this.y + this.height+tabHeight * Math.sign(this.bottom) * 0.2,
+                this.y + this.height + tabHeight * Math.sign(this.bottom) * 0.2,
 
                 this.x + this.width * Math.abs(this.bottom) - neck,
-                
-                this.y+this.height
+
+                this.y + this.height
 
             )
-        
-     }
+
+        }
         context.lineTo(this.x, this.y + this.height)
 
         //!to top left
-        if(this.left)
-       { context.lineTo(this.x,this.y+ this.height * Math.abs(this.left) + neck)
+        if (this.left) {
+            context.lineTo(this.x, this.y + this.height * Math.abs(this.left) + neck)
 
             context.bezierCurveTo(
-                this.x +tabHeight * Math.sign(this.left) * 0.2,
+                this.x + tabHeight * Math.sign(this.left) * 0.2,
                 this.y + this.height * Math.abs(this.left) + neck,
 
-                this.x +tabHeight * Math.sign(this.left),
+                this.x + tabHeight * Math.sign(this.left),
                 this.y + this.height * Math.abs(this.left) + tabWidth,
 
-                this.x +tabHeight * Math.sign(this.left),
+                this.x + tabHeight * Math.sign(this.left),
                 this.y + this.height * Math.abs(this.left)
 
             )
 
             context.bezierCurveTo(
-                this.x +tabHeight * Math.sign(this.left),
+                this.x + tabHeight * Math.sign(this.left),
                 this.y + this.height * Math.abs(this.left) - tabWidth,
 
                 this.x + tabHeight * Math.sign(this.left) * 0.2,
@@ -349,35 +353,37 @@ class Piece {
                 this.y + this.height * Math.abs(this.left) - neck
 
             )
-         } 
-         context.lineTo(this.x, this.y)
+        }
+        context.lineTo(this.x, this.y)
 
-         context.save()
+        context.save()
 
-         context.clip()
+        context.clip()
 
-         const scaledTabHeight=Math.min(VIDEO.videoWidth/SIZE.columns,VIDEO.videoHeight/SIZE.rows)*tabHeight/sz
+        const scaledTabHeight = Math.min(VIDEO.videoWidth / SIZE.columns, VIDEO.videoHeight / SIZE.rows) * tabHeight / sz
+//!
+
 
         //*each piece needs to crop a specific part of the video and show it, crop means rogner
         //*this function has 9 arguments: the VIDEO,where to take image data from(the left part where the cropping happens
         //*then the top part, then width and height) and where to draw it(x, y, width, height)
         context.drawImage(
             VIDEO,
-            (this.colIndex * VIDEO.videoWidth) / SIZE.columns-scaledTabHeight,
-            (this.rowIndex * VIDEO.videoHeight) / SIZE.rows-scaledTabHeight,
-            VIDEO.videoWidth / SIZE.columns+scaledTabHeight*2,
-            VIDEO.videoHeight / SIZE.rows+scaledTabHeight*2,
-            this.x-tabHeight,
-            this.y-tabHeight,
-            this.width+tabHeight*2,
-            this.height+tabHeight*2
+            (this.colIndex * VIDEO.videoWidth) / SIZE.columns - scaledTabHeight,
+            (this.rowIndex * VIDEO.videoHeight) / SIZE.rows - scaledTabHeight,
+            VIDEO.videoWidth / SIZE.columns + scaledTabHeight * 2,
+            VIDEO.videoHeight / SIZE.rows + scaledTabHeight * 2,
+            this.x - tabHeight,
+            this.y - tabHeight,
+            this.width + tabHeight * 2,
+            this.height + tabHeight * 2
         );
-     context.restore()
+        context.restore()
         context.stroke();
     }
 
     isClose() {
-        if (distance({ x: this.x, y: this.y }, { x: this.xCorrect, y: this.yCorrect }) < this.width / 3) {
+        if (distance({ x: this.x, y: this.y }, { x: this.xCorrect, y: this.yCorrect }) < this.width / 3) {  
             return true
         }
         return false
@@ -396,6 +402,9 @@ function distance(p1, p2) {
     return Math.sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y))
 }
 
+
+
+//!sound effect part
 function playNote(key, duration) {
     let osc = AUDIO_CONTEXT.createOscillator()
     osc.frequency.value = key
@@ -433,7 +442,7 @@ function PlayMelody() {
 }
 
 //!
-
+//!
 
 
 
@@ -565,11 +574,12 @@ function restart() {
     START_TIME = new Date().getTime()//get the time when starting playing
     END_TIME = null
     randomizePieces()
-    document.getElementById("menuItems").style.display = "none"
+    document.getElementById("menuItems").style.display = "none"//*we hide the start menu when the game begin
 }
+
 //*updateTime function for game
 function updateTime() {
-    now = new Date().getTime()
+    now = new Date().getTime() //*the getTime() function give the current time in milliseconds
     if (START_TIME != null) {
         if (END_TIME != null) { //*if the game finished we stop updating the time
             document.getElementById("time").innerHTML = formatTime(END_TIME - START_TIME)
@@ -606,6 +616,8 @@ function formatTime(milliseconds) {
     return formattedTime
 }
 //!
+
+                                                    //TODO       Database part
 
 
 
