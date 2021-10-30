@@ -3,19 +3,19 @@ let VIDEO = null; //*used to initialize a video object
 let CANVAS = null; //*used to create the Canvas object
 let CONTEXT = null; //*add a reference to the canvas context
 let PIECES = []; //*to have an array of pieces
-let SELECTED_PIECE=null //*to define the selected piece by the user
-let START_TIME=null; //* the time when the user start the game
-let END_TIME=null; // *the time when the game is over
+let SELECTED_PIECE = null //*to define the selected piece by the user
+let START_TIME = null; //* the time when the user start the game
+let END_TIME = null; // *the time when the game is over
 
-let POP_SOUND=new Audio('pop.mp3')//*variable for sound effect
-POP_SOUND.volume=0.1
+let POP_SOUND = new Audio('pop.mp3')//*variable for sound effect
+POP_SOUND.volume = 0.1
 //*to generate a sound at the end of the game
-let AUDIO_CONTEXT=new (AudioContext||webkitAudioContext||window.webkitAudioContext)()
+let AUDIO_CONTEXT = new (AudioContext || webkitAudioContext || window.webkitAudioContext)()
 //*keysnote of the sounds
-let keys={ 
-    DO:261.6,
-    RE:293.7,
-    MI:329.6
+let keys = {
+    DO: 261.6,
+    RE: 293.7,
+    MI: 329.6
 }
 
 //!we'll use the scaler to specify how much of space will be used by the image
@@ -77,6 +77,49 @@ function initializePieces(rows, cols) {
             PIECES.push(new Piece(i, j));
         }
     }
+    //!Advanced cropping part
+    let cnt = 0 //count each piece
+    for (let i = 0; i < SIZE.rows; i++) {
+        for (let j = 0; j < SIZE.columns; j++) {
+            //*select the piece by the index
+            const piece = PIECES[cnt]
+            //*if we are on the last row, we don't have any bottom tabs
+            //*so we set this to null
+            if (i == SIZE.rows - 1)
+                piece.bottom = null
+            else {
+                //*we decide ramdomly wether a piece has inner or outer tabs
+                const sign = (Math.random() - 0.5) < 0 ? -1 : 1   //if -1 it's a inner tab, otherwise it's a outer one   
+                //*we also need to decide where will the tab be locted on the edge
+                //*we will allow the tab to be betwwen 30% and 70%
+                piece.bottom = sign * (Math.random() * 0.4 + 0.3)
+            }
+            //*we do the same for the right most column
+            if (j == SIZE.columns - 1) {
+                piece.right = null
+            } else {
+                const sign = (Math.random() - 0.5) < 0 ? -1 : 1
+                piece.right = sign * (Math.random() * 0.4 + 0.3)
+            }
+            //*same thing for the left part
+            if (j == 0)
+                piece.left = null
+            else {
+                //*we don't need to random the left of the piece
+                piece.left = -PIECES[cnt - 1].right
+            }
+            //*if we are on the first row we don't have a tab on the top
+            if (i == 0)
+                piece.top = null
+            else {
+                //*we don't need to random the top of the piece
+                piece.top = -PIECES[cnt - SIZE.columns].bottom
+            }
+
+
+            cnt++
+        }
+    }
 }
 //!
 
@@ -100,7 +143,7 @@ function randomizePieces() {
 
 
 //!                 UPDATE CANVAS PART  
-function updateCanvas() { 
+function updateCanvas() {
 
     //*we need to clear the canvas before drawing
     CONTEXT.clearRect(0, 0, CANVAS.width, CANVAS.height);
@@ -171,22 +214,165 @@ class Piece {
     //*To be able to draw the pieces
     draw(context) {
         context.beginPath();
+
+
+
+        //*drawig the piece in rectangle way
+        //  context.rect(this.x, this.y, this.width, this.height); //*we set the location (x,y) and the size of the pieces, which are calculated in the constructor
+        //*sizing the tab of the piece
+        const sz = Math.min(this.width, this.height)
+        const neck = 0.05 * sz
+        const tabWidth = 0.2 * sz
+        const tabHeight = 0.2 * sz
+
+        //*drawing new shapes for the pieces
+        //!from top left
+        context.moveTo(this.x, this.y)
+
+        //!to top right
+        if(this.top)  //*we need to check if we need to draw the tab
+      
+        {
+        context.lineTo(this.x + this.width* Math.abs(this.top)-neck, this.y)
+       
+        context.bezierCurveTo(
+            this.x+this.width*Math.abs(this.top)-neck,
+            this.y-tabHeight* Math.sign(this.top)*0.2,
+
+            this.x+ this.width * Math.abs(this.top)-tabWidth,
+            this.y-tabHeight* Math.sign(this.top), 
+
+            this.x+ this.width * Math.abs(this.top),
+            this.y-tabHeight* Math.sign(this.top)
+        )
+
+        context.bezierCurveTo(
+            this.x + this.width * Math.abs(this.top) + tabWidth,
+            this.y - tabHeight * Math.sign(this.top), 
+
+            this.x + this.width * Math.abs(this.top) + neck,
+            this.y - tabHeight * Math.sign(this.top) * 0.2,
+
+            this.x + this.width * Math.abs(this.top) + neck, this.y
+        )
+        
+        }
+
+        context.lineTo(this.x + this.width, this.y)
+
+
+        //!to bottom right
+        if(this.right)
+       { context.lineTo(this.x + this.width,this.y+this.height * Math.abs(this.right) - neck)
+       
+        context.bezierCurveTo(
+            this.x+this.width-tabHeight*Math.sign(this.right)*0.2,
+            this.y+this.height*Math.abs(this.right)-neck, 
+
+            this.x + this.width - tabHeight * Math.sign(this.right),
+            this.y + this.height * Math.abs(this.right) - tabWidth, 
+
+            this.x + this.width - tabHeight * Math.sign(this.right),
+            this.y + this.height * Math.abs(this.right)
+
+        )
+
+        context.bezierCurveTo(
+            this.x + this.width - tabHeight * Math.sign(this.right),
+            this.y + this.height * Math.abs(this.right) + tabWidth,
+            
+            this.x + this.width - tabHeight * Math.sign(this.right) * 0.2,
+            this.y + this.height * Math.abs(this.right) + neck,
+            
+            this.x+this.width,
+            this.y + this.height * Math.abs(this.right) + neck
+
+        )
+     }
+        context.lineTo(this.x + this.width, this.y + this.height)
+
+        //!to bottom left
+        if(this.bottom)
+      {  context.lineTo(this.x + this.width * Math.abs(this.bottom) + neck, this.y+this.height)
+            context.bezierCurveTo(
+                this.x + this.width * Math.abs(this.bottom) + neck,
+                this.y + this.height+tabHeight * Math.sign(this.bottom) * 0.2,
+
+                this.x + this.width * Math.abs(this.bottom) + tabWidth,
+                this.y + this.height+tabHeight * Math.sign(this.bottom),
+
+                this.x + this.width * Math.abs(this.bottom),
+                this.y + this.height+tabHeight * Math.sign(this.bottom),
+
+            )
+
+            context.bezierCurveTo(
+                this.x + this.width * Math.abs(this.bottom) - tabWidth,
+                this.y + this.height+tabHeight * Math.sign(this.bottom),
+
+                this.x + this.width * Math.abs(this.bottom) - neck,
+                this.y + this.height+tabHeight * Math.sign(this.bottom) * 0.2,
+
+                this.x + this.width * Math.abs(this.bottom) - neck,
+                
+                this.y+this.height
+
+            )
+        
+     }
+        context.lineTo(this.x, this.y + this.height)
+
+        //!to top left
+        if(this.left)
+       { context.lineTo(this.x,this.y+ this.height * Math.abs(this.left) + neck)
+
+            context.bezierCurveTo(
+                this.x +tabHeight * Math.sign(this.left) * 0.2,
+                this.y + this.height * Math.abs(this.left) + neck,
+
+                this.x +tabHeight * Math.sign(this.left),
+                this.y + this.height * Math.abs(this.left) + tabWidth,
+
+                this.x +tabHeight * Math.sign(this.left),
+                this.y + this.height * Math.abs(this.left)
+
+            )
+
+            context.bezierCurveTo(
+                this.x +tabHeight * Math.sign(this.left),
+                this.y + this.height * Math.abs(this.left) - tabWidth,
+
+                this.x + tabHeight * Math.sign(this.left) * 0.2,
+                this.y + this.height * Math.abs(this.left) - neck,
+
+                this.x,
+                this.y + this.height * Math.abs(this.left) - neck
+
+            )
+         } 
+         context.lineTo(this.x, this.y)
+
+         context.save()
+
+         context.clip()
+
+         const scaledTabHeight=Math.min(VIDEO.videoWidth/SIZE.columns,VIDEO.videoHeight/SIZE.rows)*tabHeight/sz
+
         //*each piece needs to crop a specific part of the video and show it, crop means rogner
         //*this function has 9 arguments: the VIDEO,where to take image data from(the left part where the cropping happens
         //*then the top part, then width and height) and where to draw it(x, y, width, height)
         context.drawImage(
             VIDEO,
-            (this.colIndex * VIDEO.videoWidth) / SIZE.columns,
-            (this.rowIndex * VIDEO.videoHeight) / SIZE.rows,
-            VIDEO.videoWidth / SIZE.columns,
-            VIDEO.videoHeight / SIZE.rows,
-            this.x,
-            this.y,
-            this.width,
-            this.height
+            (this.colIndex * VIDEO.videoWidth) / SIZE.columns-scaledTabHeight,
+            (this.rowIndex * VIDEO.videoHeight) / SIZE.rows-scaledTabHeight,
+            VIDEO.videoWidth / SIZE.columns+scaledTabHeight*2,
+            VIDEO.videoHeight / SIZE.rows+scaledTabHeight*2,
+            this.x-tabHeight,
+            this.y-tabHeight,
+            this.width+tabHeight*2,
+            this.height+tabHeight*2
         );
-
-        context.rect(this.x, this.y, this.width, this.height); //*we set the location (x,y) and the size of the pieces, which are calculated in the constructor
+     context.restore()
         context.stroke();
     }
 
@@ -202,7 +388,7 @@ class Piece {
         this.y = this.yCorrect
         this.correct = true //*we set to true when snapping
         POP_SOUND.play()//*playing a song when snapping at the right location
-        
+
     }
 }
 
@@ -210,31 +396,31 @@ function distance(p1, p2) {
     return Math.sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y))
 }
 
-function playNote(key,duration) {
-    let osc=AUDIO_CONTEXT.createOscillator()
-    osc.frequency.value=key
+function playNote(key, duration) {
+    let osc = AUDIO_CONTEXT.createOscillator()
+    osc.frequency.value = key
     osc.start(AUDIO_CONTEXT.currentTime)
-    osc.stop(AUDIO_CONTEXT.currentTime+duration/1000)
-    
+    osc.stop(AUDIO_CONTEXT.currentTime + duration / 1000)
 
-    let enveloppe=AUDIO_CONTEXT.createGain()
+
+    let enveloppe = AUDIO_CONTEXT.createGain()
     osc.connect(enveloppe)
-    osc.type="triangle"
+    osc.type = "triangle"
     enveloppe.connect(AUDIO_CONTEXT.destination)
-    enveloppe.gain.setValueAtTime(0,AUDIO_CONTEXT.currentTime)
-    enveloppe.gain.linearRampToValueAtTime(0.5,AUDIO_CONTEXT.currentTime+0.1)
-        enveloppe.gain.linearRampToValueAtTime(0,AUDIO_CONTEXT.currentTime+duration/1000)
-
-    setTimeout(function(){
-        osc.disconnect()
-    },duration)
-}
-
-function PlayMelody(){
-    playNote(keys.MI,300)
+    enveloppe.gain.setValueAtTime(0, AUDIO_CONTEXT.currentTime)
+    enveloppe.gain.linearRampToValueAtTime(0.5, AUDIO_CONTEXT.currentTime + 0.1)
+    enveloppe.gain.linearRampToValueAtTime(0, AUDIO_CONTEXT.currentTime + duration / 1000)
 
     setTimeout(function () {
-    playNote(keys.DO,300)
+        osc.disconnect()
+    }, duration)
+}
+
+function PlayMelody() {
+    playNote(keys.MI, 300)
+
+    setTimeout(function () {
+        playNote(keys.DO, 300)
     }, 300)
 
     setTimeout(function () {
@@ -319,13 +505,13 @@ function onMouseUp() {
     //*so before we release the piece, we need to check if the piece is close to the correct location
     //*if so, we snap it in place, snap means lâcher
     //*it is very unlikely that the player will place the pieces in the pixel perfect way, that's why we use snap() to help
-    if (SELECTED_PIECE.isClose()) {
+    if (SELECTED_PIECE && SELECTED_PIECE.isClose()) {
         SELECTED_PIECE.snap()
         //*we check if all pieces are in the correct place and also the time because we don't want to update the time when the user completed the game
         if (isComplete() && END_TIME == null) {
             let now = new Date().getTime()
             END_TIME = now //*so we set the END_TIME when the game is over(when isComplete() is true)
-            setTimeout(PlayMelody,500)
+            setTimeout(PlayMelody, 500)
         }
 
     }
@@ -357,14 +543,14 @@ function getPressedPiece(loc) {
 
 //!                                                                        GAME COMPONENTS PART
 //*set difficulty function for game
-function setDifficulty(){
-    let diff=document.getElementById("difficulty").value
-    switch(diff){
+function setDifficulty() {
+    let diff = document.getElementById("difficulty").value
+    switch (diff) {
         case "easy":
-            initializePieces(3,3)
+            initializePieces(3, 3)
             break
         case "medium":
-            initializePieces(5,5)
+            initializePieces(5, 5)
             break
         case "hard":
             initializePieces(10, 10)
@@ -375,24 +561,24 @@ function setDifficulty(){
     }
 }
 //*restart function for game
-function restart(){
-    START_TIME=new Date().getTime()//get the time when starting playing
-    END_TIME=null
+function restart() {
+    START_TIME = new Date().getTime()//get the time when starting playing
+    END_TIME = null
     randomizePieces()
-    document.getElementById("menuItems").style.display="none"
+    document.getElementById("menuItems").style.display = "none"
 }
 //*updateTime function for game
-function updateTime(){
+function updateTime() {
     now = new Date().getTime()
-    if(START_TIME!=null){
-        if(END_TIME!=null){ //*if the game finished we stop updating the time
-              document.getElementById("time").innerHTML=formatTime(END_TIME-START_TIME)
+    if (START_TIME != null) {
+        if (END_TIME != null) { //*if the game finished we stop updating the time
+            document.getElementById("time").innerHTML = formatTime(END_TIME - START_TIME)
 
-        }else{
+        } else {
             document.getElementById("time").innerHTML = formatTime(now - START_TIME)
 
         }
-      
+
     }
 }
 //*checking if all pieces are in the correct location
@@ -405,19 +591,19 @@ function isComplete() {
 }
 
 //*formatTime function for game to format in 00:00:00 format
-function formatTime(milliseconds){
-       let seconds=Math.floor(milliseconds/1000)//only keep the integer part of the result when dividing by 1000
-       let s=Math.floor(seconds%60)
-       let m=Math.floor((seconds%(60*60))/60)
-       let h=Math.floor((seconds%(60*60*24))/(60*60))
+function formatTime(milliseconds) {
+    let seconds = Math.floor(milliseconds / 1000)//only keep the integer part of the result when dividing by 1000
+    let s = Math.floor(seconds % 60)
+    let m = Math.floor((seconds % (60 * 60)) / 60)
+    let h = Math.floor((seconds % (60 * 60 * 24)) / (60 * 60))
 
-       let formattedTime=h.toString().padStart(2,'0')
-       formattedTime+= ":"
-       formattedTime+=m.toString().padStart(2,'0')
-       formattedTime += ":"
-       formattedTime+=s.toString().padStart(2,'0')
+    let formattedTime = h.toString().padStart(2, '0')
+    formattedTime += ":"
+    formattedTime += m.toString().padStart(2, '0')
+    formattedTime += ":"
+    formattedTime += s.toString().padStart(2, '0')
 
-       return formattedTime
+    return formattedTime
 }
 //!
 
