@@ -7,6 +7,17 @@ let SELECTED_PIECE=null //*to define the selected piece by the user
 let START_TIME=null; //* the time when the user start the game
 let END_TIME=null; // *the time when the game is over
 
+let POP_SOUND=new Audio('pop.mp3')//*variable for sound effect
+POP_SOUND.volume=0.1
+//*to generate a sound at the end of the game
+let AUDIO_CONTEXT=new (AudioContext||webkitAudioContext||window.webkitAudioContext)()
+//*keysnote of the sounds
+let keys={ 
+    DO:261.6,
+    RE:293.7,
+    MI:329.6
+}
+
 //!we'll use the scaler to specify how much of space will be used by the image
 let SCALER = 0.8; //* set the size margin to 80%
 let SIZE = { x: 0, y: 0, width: 0, height: 0, rows: 3, columns: 3 }; //*to keep track of other related information in this size variable
@@ -55,7 +66,7 @@ function main() {
 
 
 
-//!           INITIALIZATION OF PIECES PART
+//!                                                                    INITIALIZATION OF PIECES PART
 function initializePieces(rows, cols) {
     SIZE.columns = cols;
     SIZE.rows = rows;
@@ -69,7 +80,7 @@ function initializePieces(rows, cols) {
 }
 //!
 
-//!          RANDOMIZE THE LOCATION OF PIECES PART
+//!                                                                      RANDOMIZE THE LOCATION OF PIECES PART
 function randomizePieces() {
     //we iterate trhough all of pieces and generate a random location for each piece
     for (let i = 0; i < PIECES.length; i++) {
@@ -88,8 +99,9 @@ function randomizePieces() {
 //!
 
 
-//!                      UPDATE CANVAS PART
-function updateCanvas() {
+//!                 UPDATE CANVAS PART  
+function updateCanvas() { 
+
     //*we need to clear the canvas before drawing
     CONTEXT.clearRect(0, 0, CANVAS.width, CANVAS.height);
     //*we set a 50% of transparency
@@ -126,6 +138,7 @@ function handleResize() {
             window.innerWidth / VIDEO.videoWidth,
             window.innerHeight / VIDEO.videoHeight
         );
+
     //!then we set the SIZE attributes accordingly
     SIZE.width = resizer * VIDEO.videoWidth;
     SIZE.height = resizer * VIDEO.videoHeight;
@@ -137,7 +150,7 @@ function handleResize() {
 
 
 
-//!                   CROPPING THE VIDEO INTO PIECES PART
+//!                                                      CROPPING THE VIDEO INTO PIECES PART
 
 //*Creation of Piece object
 class Piece {
@@ -187,20 +200,59 @@ class Piece {
     snap() {
         this.x = this.xCorrect
         this.y = this.yCorrect
-        this.correct = true //we set to true when snapping
+        this.correct = true //*we set to true when snapping
+        POP_SOUND.play()//*playing a song when snapping at the right location
+        
     }
 }
 
 function distance(p1, p2) {
     return Math.sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y))
 }
+
+function playNote(key,duration) {
+    let osc=AUDIO_CONTEXT.createOscillator()
+    osc.frequency.value=key
+    osc.start(AUDIO_CONTEXT.currentTime)
+    osc.stop(AUDIO_CONTEXT.currentTime+duration/1000)
+    
+
+    let enveloppe=AUDIO_CONTEXT.createGain()
+    osc.connect(enveloppe)
+    osc.type="triangle"
+    enveloppe.connect(AUDIO_CONTEXT.destination)
+    enveloppe.gain.setValueAtTime(0,AUDIO_CONTEXT.currentTime)
+    enveloppe.gain.linearRampToValueAtTime(0.5,AUDIO_CONTEXT.currentTime+0.1)
+        enveloppe.gain.linearRampToValueAtTime(0,AUDIO_CONTEXT.currentTime+duration/1000)
+
+    setTimeout(function(){
+        osc.disconnect()
+    },duration)
+}
+
+function PlayMelody(){
+    playNote(keys.MI,300)
+
+    setTimeout(function () {
+    playNote(keys.DO,300)
+    }, 300)
+
+    setTimeout(function () {
+        playNote(keys.RE, 150)
+    }, 450)
+
+    setTimeout(function () {
+        playNote(keys.MI, 600)
+    }, 600)
+}
+
 //!
 
 
 
 
 
-//!                       DRAG AND DROP PART
+//!                                                                      DRAG AND DROP PART
 
 function addEventListeners() {
     //*addEventListeners for mouse
@@ -273,6 +325,7 @@ function onMouseUp() {
         if (isComplete() && END_TIME == null) {
             let now = new Date().getTime()
             END_TIME = now //*so we set the END_TIME when the game is over(when isComplete() is true)
+            setTimeout(PlayMelody,500)
         }
 
     }
@@ -302,7 +355,7 @@ function getPressedPiece(loc) {
 
 
 
-//!                  GAME COMPONENTS PART
+//!                                                                        GAME COMPONENTS PART
 //*set difficulty function for game
 function setDifficulty(){
     let diff=document.getElementById("difficulty").value
